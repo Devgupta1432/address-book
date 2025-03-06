@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+/*package com.example.demo.controller;
 
 import com.example.demo.model.AddressBookEntry;
 import com.example.demo.service.AddressBookService;
@@ -49,5 +49,57 @@ public class AddressBookController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+}
+*/
+package com.example.demo.controller;
+
+import com.example.demo.model.AddressBookEntry;
+import com.example.demo.service.AddressBookService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/addressbook")
+public class AddressBookController {
+
+    @Autowired
+    private AddressBookService addressBookService;
+
+    @GetMapping
+    public ResponseEntity<List<AddressBookEntry>> getAllContacts() {
+        return ResponseEntity.ok(addressBookService.getAllContacts());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AddressBookEntry> getContactById(@PathVariable Long id) {
+        return addressBookService.getContactById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<AddressBookEntry> createContact(@RequestBody AddressBookEntry contact) {
+        return ResponseEntity.ok(addressBookService.saveContact(contact));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AddressBookEntry> updateContact(@PathVariable Long id, @RequestBody AddressBookEntry contactDetails) {
+        try {
+            return ResponseEntity.ok(addressBookService.updateContact(id, contactDetails));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteContact(@PathVariable Long id) {
+        return addressBookService.deleteContact(id) ?
+                ResponseEntity.ok("Contact deleted successfully with id " + id) :
+                ResponseEntity.notFound().build();
     }
 }

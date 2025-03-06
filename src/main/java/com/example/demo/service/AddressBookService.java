@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.AddressBookDTO;
 import com.example.demo.model.AddressBookEntry;
 import com.example.demo.repository.AddressBookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class AddressBookService {
@@ -16,36 +14,35 @@ public class AddressBookService {
     @Autowired
     private AddressBookRepository repository;
 
-    public List<AddressBookDTO> getAllContacts() {
-        return repository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public List<AddressBookEntry> getAllContacts() {
+        return repository.findAll();
     }
 
-    public Optional<AddressBookDTO> getContactById(Long id) {
-        return repository.findById(id).map(this::convertToDTO);
+    public Optional<AddressBookEntry> getContactById(Long id) {
+        return repository.findById(id);
     }
 
-    public AddressBookDTO saveContact(AddressBookDTO dto) {
-        AddressBookEntry entry = convertToEntity(dto);
-        AddressBookEntry savedEntry = repository.save(entry);
-        return convertToDTO(savedEntry);
+    public AddressBookEntry saveContact(AddressBookEntry entry) {
+        return repository.save(entry);
     }
 
-    public void deleteContact(Long id) {
-        repository.deleteById(id);
+    public AddressBookEntry updateContact(Long id, AddressBookEntry contactDetails) {
+        AddressBookEntry contact = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contact not found with id " + id));
+
+        contact.setName(contactDetails.getName());
+        contact.setPhone(contactDetails.getPhone());
+        contact.setEmail(contactDetails.getEmail());
+        contact.setAddress(contactDetails.getAddress());
+
+        return repository.save(contact);
     }
 
-    private AddressBookDTO convertToDTO(AddressBookEntry entry) {
-        return new AddressBookDTO(entry.getName(), entry.getPhone(), entry.getEmail(), entry.getAddress());
-    }
-
-    private AddressBookEntry convertToEntity(AddressBookDTO dto) {
-        AddressBookEntry entry = new AddressBookEntry();
-        entry.setName(dto.getName());
-        entry.setPhone(dto.getPhone());
-        entry.setEmail(dto.getEmail());
-        entry.setAddress(dto.getAddress());
-        return entry;
+    public boolean deleteContact(Long id) {
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

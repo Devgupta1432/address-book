@@ -1,8 +1,9 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.AddressBookEntry;
-import com.example.demo.repository.AddressBookRepository;
+import com.example.demo.dto.AddressBookDTO;
+import com.example.demo.service.AddressBookService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,39 +14,37 @@ import java.util.Optional;
 public class AddressBookController {
 
     @Autowired
-    private AddressBookRepository addressBookRepository;
+    private AddressBookService addressBookService;
 
     @GetMapping
-    public List<AddressBookEntry> getAllContacts() {
-        return addressBookRepository.findAll();
+    public ResponseEntity<List<AddressBookDTO>> getAllContacts() {
+        return ResponseEntity.ok(addressBookService.getAllContacts());
     }
 
     @GetMapping("/{id}")
-    public Optional<AddressBookEntry> getContactById(@PathVariable Long id) {
-        return addressBookRepository.findById(id);
+    public ResponseEntity<AddressBookDTO> getContactById(@PathVariable Long id) {
+        Optional<AddressBookDTO> contact = addressBookService.getContactById(id);
+        return contact.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public AddressBookEntry createContact(@RequestBody AddressBookEntry contact) {
-        return addressBookRepository.save(contact);
+    public ResponseEntity<AddressBookDTO> createContact(@RequestBody AddressBookDTO contact) {
+        return ResponseEntity.ok(addressBookService.saveContact(contact));
     }
 
     @PutMapping("/{id}")
-    public AddressBookEntry updateContact(@PathVariable Long id, @RequestBody AddressBookEntry contactDetails) {
-        AddressBookEntry contact = addressBookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Contact not found with id " + id));
-
-        contact.setName(contactDetails.getName());
-        contact.setPhone(contactDetails.getPhone());
-        contact.setEmail(contactDetails.getEmail());
-        contact.setAddress(contactDetails.getAddress());
-
-        return addressBookRepository.save(contact);
+    public ResponseEntity<AddressBookDTO> updateContact(@PathVariable Long id, @RequestBody AddressBookDTO contact) {
+        Optional<AddressBookDTO> existingContact = addressBookService.getContactById(id);
+        if (existingContact.isPresent()) {
+            return ResponseEntity.ok(addressBookService.saveContact(contact));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public String deleteContact(@PathVariable Long id) {
-        addressBookRepository.deleteById(id);
-        return "Contact deleted successfully with id " + id;
+    public ResponseEntity<String> deleteContact(@PathVariable Long id) {
+        addressBookService.deleteContact(id);
+        return ResponseEntity.ok("Contact deleted successfully with id " + id);
     }
 }
